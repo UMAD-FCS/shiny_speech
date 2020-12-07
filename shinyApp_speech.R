@@ -45,7 +45,7 @@ shinyAppUI = fluidPage(
 shinyAppServer <- function(input, output) {
   
   d <- reactive({
-    speech::speech_build(input$url) 
+    speech::speech_build(input$url,compiler = TRUE) 
   })
   
   observeEvent(input$boton,{ output$resumen <- renderText({
@@ -66,9 +66,6 @@ shinyAppServer <- function(input, output) {
   )
   
   })
-  
-#})
-
   
   
   output$nube <- renderImage({
