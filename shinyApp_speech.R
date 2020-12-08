@@ -5,9 +5,9 @@ library(sparkline)
 library(timevis)
 library(DT)
 library(shinycssloaders)
-library(fontawesome)
 library(xlsx)
 library(quanteda)
+library(kableExtra)
 
 shinyAppUI = fluidPage(
   # define theme ####
@@ -26,20 +26,20 @@ shinyAppUI = fluidPage(
   downloadButton('descargar', 'Descargar datos (.xlsx)',class = "btn btn-primary"), 
   hr(), 
   hr(), 
-    mainPanel(width = 10, 
-              tabsetPanel(tabPanel(div("Tabla"),
-                                   wellPanel(h3(""),
-                                             h5(""),
-                                             fluidRow(column(10, htmlOutput("resumen")
-                                             ),))),  tabPanel(div("Nubes de palabras"),
-                                                              wellPanel(h3(""),
-                                                                        h5(""),
-                                                                        fluidRow(column(10, imageOutput("nube")
-                                                                        ),))))
-              
-              
-              
-              ))
+  mainPanel(width = 12, 
+            tabsetPanel(tabPanel(div("Tabla"),
+                                 wellPanel(h3(""),
+                                           h5(""),
+                                           fluidRow(column(12, htmlOutput("resumen")
+                                           ),))),  tabPanel(div("Nubes de palabras"),
+                                                            wellPanel(h3(""),
+                                                                      h5(""),
+                                                                      fluidRow(column(12, imageOutput("nube")
+                                                                      ),))))
+            
+            
+            
+  ))
 
 
 shinyAppServer <- function(input, output) {
@@ -70,7 +70,7 @@ shinyAppServer <- function(input, output) {
   
   output$nube <- renderImage({
     salida <- tempfile(fileext='.png')
-    png(salida, width=800, height=800)
+    png(salida, width=500, height=500)
     d()%>%
       as.data.frame()%>%
       quanteda::corpus(.,text_field = "speech") %>%
@@ -80,7 +80,7 @@ shinyAppServer <- function(input, output) {
                     remove_punct = TRUE, 
                     remove_numbers = TRUE, 
                     verbose = FALSE)%>%
-                  dfm_remove(min_nchar=3)  %>%
+      dfm_remove(min_nchar=3)  %>%
       textplot_wordcloud(., min.count = 3,max_words = 150,random.order = FALSE,
                          rot.per = .50, colors = RColorBrewer::brewer.pal(8,"Dark2"))
     dev.off()
@@ -94,4 +94,3 @@ shinyAppServer <- function(input, output) {
 
 shinyApp(ui = shinyAppUI, server = shinyAppServer)
 
-                                             
