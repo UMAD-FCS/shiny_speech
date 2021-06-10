@@ -12,19 +12,50 @@ library(wordcloud2)
 library(dplyr)
 library(bslib)
 library(bsplus)
+library(Boreluy)
+library(puy)
 
 
-shinyAppUI = fluidPage(
+shinyAppUI = navbarPage(
   # define theme ####
-  theme = shinytheme("cerulean"),
+  theme = shinytheme("flatly"),
+  collapsible=TRUE,
+  windowTitle = "SPEECH App",
   # use custom css #### 
   tags$head(
     tags$link(href = "style.css", rel = "stylesheet")
   ),
   
-  titlePanel("Descarga de sesiones - Parlamento Uruguayo",
-             windowTitle = "speech App"),
+  tabPanel(shiny::icon(name="home"), br(),
+           
+           mainPanel(width = 12,
+                     br(),
+                     
+                     div(class = "list-group",
+                         a(href = "#",
+                           class = "list-group-item list-group-item-action active",
+                           "")),
+                     br(),
+                     br(),
+                     includeMarkdown("proyecto.Rmd"),
+                     br(),
+                     br(),
+                     
+                     div(class = "list-group",
+                         a(href = "#",
+                           class = "list-group-item list-group-item-action active",
+                           "")),
+                     br(),
+                     br(),
+                     includeMarkdown("proyecto2.Rmd"),
+                     br(),
+                     br(),
+                     
+           )),
   
+  tabPanel("Descarga sesiones",
+             
+  h2("Descarga de sesiones - Parlamento Uruguayo"),
   textAreaInput("url", "Ingrese URL", "",width = '800px' ),
   h6("* Es posible ingresar más de una URL, separando con coma (,)"),
   hr(),
@@ -33,7 +64,7 @@ shinyAppUI = fluidPage(
     label = "Compilar", FALSE,width = "13%") %>%
     shinyInput_label_embed(
       shiny_iconlink() %>%
-        bs_embed_popover(title = "Compilar", content = "Se debe marcar la opción Compilar si se quiere agrupar todas las intervenciones de cada uno de los legisladores en un documento o conjunto de documentos.", placement = "bottom")),use_bs_popover()),
+        bs_embed_popover(title = "Compilar", content = "Se debe marcar la opción Compilar si se quiere agrupar todas las intervenciones de cada uno de los/las legisladores/as en un documento o conjunto de documentos.", placement = "bottom")),use_bs_popover()),
   br(),
   actionButton("boton", "Buscar",class="btn btn-primary"),
   downloadButton('descargar', 'Descargar datos (.xlsx)',class = "btn btn-primary"), 
@@ -51,42 +82,43 @@ shinyAppUI = fluidPage(
             
             
             
-  ))
+  )))
 
 
 shinyAppServer <- function(input, output) {
   
-  
 
-  
-  
   d <- eventReactive(input$boton,{
-    
-    
+
+
     urls <- unlist(strsplit(input$url, ","))
-    
+
     urls=c(paste0(urls, "_", seq_along(urls)))
+
+    d = speech::speech_build(urls,compiler = input$compila)
     
-    speech::speech_build(urls,compiler = input$compila) 
-    
+    d <- puy::as_speech_politicos(speech = d)
+
   })
-  
+
+
+  output$resumen <- renderDT({
+    
+    
+    datatable(
+      d(),
+      rownames = TRUE,
+      #extensions = 'Buttons',
+      options = list(
+        pageLength = 50,
+        dom = 'Bfrtip'))
+    
+  })  
+
   
 
-    output$resumen <- renderDT({
-    
-      
-      datatable(
-        d(),
-        rownames = TRUE,
-        #extensions = 'Buttons',
-        options = list(
-          pageLength = 50,
-          dom = 'Bfrtip'))
-    
-  })
-    
-    
+  
+  
   
   output$descargar <- downloadHandler(
     filename = function() {
@@ -121,36 +153,7 @@ shinyAppServer <- function(input, output) {
   })
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  # output$nube <- renderImage({
-  #   salida <- tempfile(fileext='.png')
-  #   png(salida, width=500, height=500)
-  #   d()%>%
-  #     as.data.frame()%>%
-  #     quanteda::corpus(.,text_field = "speech") %>%
-  #     quanteda::dfm(.,stem = FALSE,
-  #                   tolower = TRUE,
-  #                   remove = c(stopwords("spanish"),"señor", "señora","legislador","legisladora"), 
-  #                   remove_punct = TRUE, 
-  #                   remove_numbers = TRUE, 
-  #                   verbose = FALSE)%>%
-  #     dfm_remove(min_nchar=3)  %>%
-  #     textplot_wordcloud(., min.count = 3,max_words = 150,random.order = FALSE,
-  #                        rot.per = .50, colors = RColorBrewer::brewer.pal(8,"Dark2"))
-  #   dev.off()
-  #   
-  #   # Return a list
-  #   list(src = salida,
-  #        alt = "Texto")
-  # }, deleteFile = TRUE)
+
   
 }
 

@@ -1,0 +1,12 @@
+name: shiny_speech
+title: shiny_speech
+username:
+account: bancodedatos-fcs
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4200900
+bundleId: 4652228
+url: https://bancodedatos-fcs.shinyapps.io/shiny_speech/
+when: 1622228986.45464
+asMultiple: FALSE
+asStatic: FALSE

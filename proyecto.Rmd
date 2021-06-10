@@ -1,0 +1,14 @@
+---
+title: ''
+output: html_document
+runtime: shiny
+---
+
+
+
+**SPEECH App** es una aplicación que permite la descarga interactiva de sesiones parlamentarias en formato de base de datos, dónde es posible descargar la transcripción de las menciones de cada legislador/a en una sesión o conjunto de sesiones, incluyendo información anexa como el sexo, partido político, número de palabras e indicadores de calidad de la trascripción.  
+
+
+La aplicación se basa en el paquete de R [_speech_](https://cran.r-project.org/web/packages/speech/index.html) desarrollado por los docentes _Nicolas Schmidt_, _Diego Lujan_ y _Juan Andres Moraes_ del [Departamento de Ciencia Política](https://cienciassociales.edu.uy/departamento-de-ciencia-politica/) de la [Facultad de Ciencias Sociales](https://cienciassociales.edu.uy/) ([UdelaR](https://udelar.edu.uy/portal/)), cuya documentación detallada se encuentra [aquí](https://cran.r-project.org/web/packages/speech/speech.pdf). 
+
+
