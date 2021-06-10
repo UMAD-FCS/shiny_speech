@@ -6,7 +6,7 @@ runtime: shiny
 
 
 
-La aplicación fue desarrollada por docentes de la [Unidad de Métodos y Acceso a Datos](https://umad.cienciassociales.edu.uy/) ( _UMAD_) la [Facultad de Ciencias Sociales](https://cienciassociales.edu.uy/).
+La aplicación fue desarrollada por docentes de la [Unidad de Métodos y Acceso a Datos](https://umad.cienciassociales.edu.uy/) ( _UMAD_) de la [Facultad de Ciencias Sociales](https://cienciassociales.edu.uy/).
 
 
 **Equipo:**

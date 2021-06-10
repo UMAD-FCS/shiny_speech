@@ -13,18 +13,19 @@ library(dplyr)
 library(bslib)
 library(bsplus)
 library(Boreluy)
-library(puy)
+#library(puy)
 
 
-shinyAppUI = navbarPage(
+shinyAppUI = fluidPage(
+
+  
+  navbarPage(
   # define theme ####
   theme = shinytheme("flatly"),
+  title = "SPEECH App",
   collapsible=TRUE,
   windowTitle = "SPEECH App",
-  # use custom css #### 
-  tags$head(
-    tags$link(href = "style.css", rel = "stylesheet")
-  ),
+
   
   tabPanel(shiny::icon(name="home"), br(),
            
@@ -74,7 +75,7 @@ shinyAppUI = navbarPage(
             tabsetPanel(tabPanel(div("Tabla"),
                                  wellPanel(h3(""),
                                            h5(""),
-                                           fluidRow(column(12, DTOutput("resumen")%>% withSpinner(color="#36a1dc") ),))),  tabPanel(div("Nubes de palabras"),
+                                           fluidRow(column(12, DTOutput("resumen")%>% withSpinner(color="#2a3a4a") ),))),  tabPanel(div("Nubes de palabras"),
                                                             wellPanel(h3(""),
                                                                       h5(""),
                                                                       fluidRow(column(12, wordcloud2Output("nube",width = "100%")
@@ -82,7 +83,7 @@ shinyAppUI = navbarPage(
             
             
             
-  )))
+  ))))
 
 
 shinyAppServer <- function(input, output) {
@@ -97,7 +98,7 @@ shinyAppServer <- function(input, output) {
 
     d = speech::speech_build(urls,compiler = input$compila)
     
-    d <- puy::as_speech_politicos(speech = d)
+    #d <- puy::as_speech_politicos(speech = d)
 
   })
 

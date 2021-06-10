@@ -6,7 +6,7 @@ runtime: shiny
 
 
 
-**SPEECH App** es una aplicación que permite la descarga interactiva de sesiones parlamentarias en formato de base de datos, dónde es posible descargar la transcripción de las menciones de cada legislador/a en una sesión o conjunto de sesiones, incluyendo información anexa como el sexo, partido político, número de palabras e indicadores de calidad de la trascripción.  
+**SPEECH App** es una aplicación que permite la visualización y descarga de sesiones parlamentarias alojadas en el sitio web del [Parlamento Uruguayo](https://parlamento.gub.uy/documentosyleyes/documentos/diarios-de-sesionen) ingresando la URL de los diarios de sesión. Permite transformar la versión taquigráfica en un formato de base de datos ordenado que incluye las menciones de cada legislador/a (desagregadas o agrupadas), incluyendo información anexa como el sexo, partido político, número de palabras e indicadores de calidad de la transcripción.  
 
 
 La aplicación se basa en el paquete de R [_speech_](https://cran.r-project.org/web/packages/speech/index.html) desarrollado por los docentes _Nicolas Schmidt_, _Diego Lujan_ y _Juan Andres Moraes_ del [Departamento de Ciencia Política](https://cienciassociales.edu.uy/departamento-de-ciencia-politica/) de la [Facultad de Ciencias Sociales](https://cienciassociales.edu.uy/) ([UdelaR](https://udelar.edu.uy/portal/)), cuya documentación detallada se encuentra [aquí](https://cran.r-project.org/web/packages/speech/speech.pdf). 
