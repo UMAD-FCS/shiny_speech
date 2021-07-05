@@ -11,10 +11,11 @@ La aplicación fue desarrollada por docentes de la [Unidad de Métodos y Acceso 
 
 **Equipo:**
 
+* [Elina Gómez](https://elinagomez.com) ([UMAD-FCS](https://umad.cienciassociales.edu.uy/))
 
-* [Nicolas Schmidt](mailito:nicolas.schmidt@cienciassociales.edu.uy) ([UMAD-FCS](https://umad.cienciassociales.edu.uy/))
+* [Nicolas Schmidt](https://github.com/Nicolas-Schmidt) ([UMAD-FCS](https://umad.cienciassociales.edu.uy/))
 
-* [Elina Gómez](mailito:elina.gomez@cienciassociales.edu.uy) ([UMAD-FCS](https://umad.cienciassociales.edu.uy/))
+
 
 
 
