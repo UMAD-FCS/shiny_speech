@@ -4,7 +4,21 @@ output: html_document
 runtime: shiny
 ---
 
+El paquete _speech_ permite convertir diarios de sesión del parlamento uruguayo en formato PDF a bases de datos ordenadas en la que cada fila es la intervención de cada uno/a de los/as legisladores/as que interviene en esa sesión. Asimismo, dado que los diarios de sesión muchas veces son imágenes escaneadas y que en el proceso de OCR (reconocimiento óptico de caracteres por su sigla en inglés) se puede perder o dañar la información recuperada, el paquete provee un conjunto de funciones que ayudan a mejorar problemas de este tipo.
 
+Las variables incluidas en la base de datos son: 
 
+- _legislator:_ nombre del legislador/a
+- _legislature:_ número de la legislatura
+- _chamber:_  cámara del documento (representantes, senadores, asamblea general, comisión permanente) 
+- _date:_ fecha de sesión
+- _id:_ identificador
+- _speech:_ transcripción de las intervenciones parlamentarias 
+- _sex:_ sexo del legislador/a
+- _legislator2:_ nombre completo del legislador/a
+- _party:_ partido político
+- _party_acron:_ acrónimo del partido político
+- _indicator:_ 
+- _words:_ número de palabras de la intervención
 
-
+En el repositorio [speech-ejemplos](https://github.com/Nicolas-Schmidt/speech-ejemplos) se pueden visualizar algunas especificaciones y usos del paquete. 

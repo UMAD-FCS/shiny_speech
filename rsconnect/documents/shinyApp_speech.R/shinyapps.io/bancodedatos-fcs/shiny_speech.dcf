@@ -5,8 +5,8 @@ account: bancodedatos-fcs
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4200900
-bundleId: 4834896
+bundleId: 4968781
 url: https://bancodedatos-fcs.shinyapps.io/shiny_speech/
-when: 1626711852.24418
+when: 1630006709.85432
 asMultiple: FALSE
 asStatic: FALSE

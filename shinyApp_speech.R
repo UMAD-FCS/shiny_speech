@@ -1,4 +1,4 @@
-#Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre1.8.0_271') 
+options(shiny.sanitize.errors = FALSE)
 suppressPackageStartupMessages(library(shiny))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(rhandsontable))
@@ -29,8 +29,15 @@ library(tibble)
 library(utils)
 library(kableExtra)
 library(knitr)
-
-
+library(shinyFiles)
+library(tabulizer)
+library(tabulizerjars)
+library(magrittr)
+library(utf8)
+library(rJava)
+library(tm)
+library(htmltools)
+library(stringi)
 
 
 shinyAppUI = fluidPage(
@@ -98,7 +105,7 @@ shinyAppUI = fluidPage(
                                   bs_embed_popover(title = "Ubicación URL", html="true", 
                                                    content = paste0("<a href='https://parlamento.gub.uy/documentosyleyes/documentos/diarios-de-sesion'>  Ir a Diarios de sesiones del Parlamento </a>"," ","<img src='url.png' height='150' />"), placement = "bottom")),use_bs_popover())
                         ,
-                        h6("* Es posible ingresar más de una URL, separando con coma (,)"),
+                        #h6("* Es posible ingresar más de una URL, separando con coma (,)"),
                         hr(),
                         div(checkboxInput(
                           inputId = "compila",
@@ -133,6 +140,7 @@ shinyAppUI = fluidPage(
                         br(),
                         
                         fileInput('file_input', 'Subir archivo ( . pdf )', accept = c('.pdf')),
+                        
                         
                         h6("* Es posible subir un único archivo"),
                         hr(),
@@ -196,18 +204,9 @@ shinyAppUI = fluidPage(
 
 shinyAppServer <- shinyServer(function(input, output, session) {
   
+  
   library(tabulizer)
-  
-  
-  runjs('//$("#text-row > div:nth-child(4) > div > div.input-group > input").remove();
-        $("#nwediv > div:nth-child(3) > div > div > input").remove()
-        //$("#text-row > div:nth-child(4) > div.form-group.shiny-input-container").remove()
-        $("#text-row > div:nth-child(4) > div > label").remove()'
-  )
-
-  
-  # source('drawScrape.R', local=TRUE)
-  # source('functions.R', local=TRUE)
+  library(tabulizerjars)
   
 
   pdf <- reactiveValues(pdf_folder = NA,
@@ -277,47 +276,57 @@ shinyAppServer <- shinyServer(function(input, output, session) {
     removeModal()
   })
   
-
-  observeEvent(input$file_input, {
-    if (is.null(input$file_input)){
-      return(NULL)
-    }
-    
-    
-    pdf$pdfUrl <- input$file_input$datapath
-    
-    
-    
-  })
   
 
   observeEvent(input$boton, {
     
-    
+    library(puy)
     a <- speech::speech_build(file = pdf$pdfPath, compiler = input$compila)
+    a$speech=enc2native(a$speech)
     
     library(puy)
     aa <- puy::add_party(speech = a)
     aa=as.data.frame(aa)
-    aa$date <- as.POSIXct(as.character(aa$date), tz="UTC")
+
     
-    
-    output$resumen <- renderDT({ 
+    output$resumen <- renderDT({
       
-      mutate(aa, date = format(date, "%Y-%m-%d"))%>%
-        relocate(id, .after = last_col())%>%
-        DT::datatable(rownames = TRUE, options = list(pageLength = 50,
-                                                      
-                                                      dom = 'Bfrtip',
-                                                      scrollX = T,
-                                                      columnDefs = list(list(
-                                                        targets = 5,
-                                                        render = JS(
-                                                          "function(data, type, row, meta) {",
-                                                          "return type === 'display' && data.length > 150 ?",
-                                                          "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
-                                                          "}")
-                                                      ))), callback = JS('table.page(3).draw(false);'))
+      # validate(need(nrow(aa) > 0, 
+      #               'No se pudo recuperar el documento'))
+      
+      #mutate(aa, date = format(date, "%Y-%m-%d"))%>%
+      
+      
+      
+      DT::datatable(aa %>%
+                      dplyr::relocate(id, .after = last_col()),rownames = TRUE, options = list(pageLength = 50,
+                                                                                        
+                                                                                        dom = 'Bfrtip',
+                                                                                        scrollX = T,
+                                                                                        columnDefs = list(list(
+                                                                                          targets = 5,
+                                                                                          render = JS(
+                                                                                            "function(data, type, row, meta) {",
+                                                                                            "return type === 'display' && data.length > 150 ?",
+                                                                                            "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
+                                                                                            "}")
+                                                                                        ))), callback = JS('table.page(3).draw(false);'))
+      
+      
+      # aa %>%  
+      #   dplyr::relocate(id, .after = last_col())%>%
+      #   DT::datatable(rownames = TRUE, options = list(pageLength = 50,
+      #                                                 
+      #                                                 dom = 'Bfrtip',
+      #                                                 scrollX = T,
+      #                                                 columnDefs = list(list(
+      #                                                   targets = 5,
+      #                                                   render = JS(
+      #                                                     "function(data, type, row, meta) {",
+      #                                                     "return type === 'display' && data.length > 150 ?",
+      #                                                     "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
+      #                                                     "}")
+      #                                                 ))), callback = JS('table.page(3).draw(false);'))
       
       
     })
@@ -325,7 +334,8 @@ shinyAppServer <- shinyServer(function(input, output, session) {
     
     output$nube <- renderWordcloud2({
       
-      
+      # validate(need(nrow(aa) > 0, 
+      #               'No se pudo recuperar el documento'))
       aa %>%
         quanteda::corpus(.,text_field = "speech") %>%
         quanteda::dfm(.,stem = FALSE,
@@ -358,16 +368,35 @@ shinyAppServer <- shinyServer(function(input, output, session) {
   })
   
   
+  observeEvent(input$file_input, {
+    if (is.null(input$file_input)){
+      return(NULL)
+    }
+    
+    
+    pdf$pdfUrl <- input$file_input$datapath
+
+
+
+  })
+  
+  
   observeEvent(input$boton2, {
+    
+    library(puy)
+    library(speech)
     
     d <- speech::speech_build(pdf$pdfUrl,compiler = input$compila2)
     
-    library(puy)
-    d <- puy::add_party(speech = d)
-    
-    dd = as.data.frame(d)
+      
+      d <- puy::add_party(speech = d)
+      
+      dd = as.data.frame(d)
+      
+
     
     output$resumen2 <- renderDT({
+      
       
       DT::datatable(dd %>%
                       relocate(id, .after = last_col()),rownames = TRUE, options = list(pageLength = 50,
@@ -388,6 +417,8 @@ shinyAppServer <- shinyServer(function(input, output, session) {
     
     output$nube2 <- renderWordcloud2({
       
+      validate(need(nrow(dd) > 0, 
+                    'No se pudo recuperar el documento'))
       
       dd %>%
         quanteda::corpus(.,text_field = "speech") %>%
