@@ -1,43 +1,21 @@
-options(shiny.sanitize.errors = FALSE)
-suppressPackageStartupMessages(library(shiny))
-suppressPackageStartupMessages(library(data.table))
-suppressPackageStartupMessages(library(rhandsontable))
-suppressPackageStartupMessages(library(shinyjs))
-suppressPackageStartupMessages(library(shinyBS))
-suppressPackageStartupMessages(library(shinythemes))
-suppressPackageStartupMessages(library(png))
-suppressPackageStartupMessages(library(httr))
-suppressPackageStartupMessages(library(purrr))
-suppressPackageStartupMessages(library(bsplus))
-suppressPackageStartupMessages(library(speech))
-suppressPackageStartupMessages(library(puy))
+library(shiny)
+library(shinythemes)
+library(sparkline)
+library(timevis)
 library(DT)
-suppressPackageStartupMessages(library(wordcloud2))
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(quanteda))
-suppressPackageStartupMessages(library(quanteda.textstats))
-suppressPackageStartupMessages(library(xlsx))
-suppressPackageStartupMessages(library(RColorBrewer))
-suppressPackageStartupMessages(library(tidyverse))
-library(htmlwidgets)
-library(curl)
-library(stringr)
-library(lubridate)
-library(purrr)
-library(pdftools)
-library(tibble)
-library(utils)
+library(shinycssloaders)
+library(xlsx)
+library(quanteda)
 library(kableExtra)
-library(knitr)
-library(shinyFiles)
-library(tabulizer)
-library(tabulizerjars)
-library(magrittr)
-library(utf8)
-library(rJava)
-library(tm)
-library(htmltools)
-library(stringi)
+library(wordcloud2)
+library(dplyr)
+library(bslib)
+library(bsplus)
+library(Boreluy)
+library(puy)
+library(speech)
+library(rmarkdown)
+library(markdown)
 
 
 shinyAppUI = fluidPage(
@@ -105,7 +83,7 @@ shinyAppUI = fluidPage(
                                   bs_embed_popover(title = "Ubicación URL", html="true", 
                                                    content = paste0("<a href='https://parlamento.gub.uy/documentosyleyes/documentos/diarios-de-sesion'>  Ir a Diarios de sesiones del Parlamento </a>"," ","<img src='url.png' height='150' />"), placement = "bottom")),use_bs_popover())
                         ,
-                        #h6("* Es posible ingresar más de una URL, separando con coma (,)"),
+                        h6("* Es posible ingresar más de una URL, separando con coma (,)"),
                         hr(),
                         div(checkboxInput(
                           inputId = "compila",
@@ -123,7 +101,7 @@ shinyAppUI = fluidPage(
                                                        wellPanel(h3(""),
                                                                  h5(""),
                                                                  fluidRow(column(12, DTOutput("resumen")
-                                                                                 #%>% withSpinner(color="#2a3a4a",hide.ui = FALSE) 
+                                                                                 %>% withSpinner(color="#2a3a4a",hide.ui = FALSE) 
                                                                  ),))),  tabPanel(div("Nubes de palabras"),
                                                                                   wellPanel(h3(""),
                                                                                             h5(""),
@@ -159,7 +137,7 @@ shinyAppUI = fluidPage(
                                   tabsetPanel(tabPanel(div("Tabla"),
                                                        wellPanel(h3(""),
                                                                  h5(""),
-                                                                 fluidRow(column(12, DTOutput("resumen2")#%>% withSpinner(color="#2a3a4a",hide.ui = FALSE) 
+                                                                 fluidRow(column(12, DTOutput("resumen2")%>% withSpinner(color="#2a3a4a",hide.ui = FALSE) 
                                                                  ),))),  tabPanel(div("Nubes de palabras"),
                                                                                   wellPanel(h3(""),
                                                                                             h5(""),
@@ -200,265 +178,146 @@ shinyAppUI = fluidPage(
   ))
 
 
-
-
-shinyAppServer <- shinyServer(function(input, output, session) {
+shinyAppServer <- function(input, output) {
   
   
-  library(tabulizer)
-  library(tabulizerjars)
+  d <- eventReactive(input$boton,{
+    
+    
+    urls <- stringr::str_trim(unlist(strsplit(input$url, ",")))
+    
+    d = speech::speech_build(urls,compiler = input$compila)
+    
+    d <- puy::add_party(speech = d)
+    
+  })
   
-
-  pdf <- reactiveValues(pdf_folder = NA,
-                        pdfPath = "NA",
-                        pdfUrl = "NA")
   
-  tables <- reactiveValues(df=NA)
-  safe_GET <- safely(GET)
-  assign_extension <- function(response){
-    if(is.null(response$result)){
-      print("no response")
-      # response$result$status_code
-      "no response"
-    } else{
-      if(response$result$status_code==200){
-        con_type <- response$result$headers$`content-type`
-        if(grepl("pdf", con_type)){
-          ext <- "pdf"
-        } else if(grepl("zip", con_type)){
-          ext <- "zip"
-        } else if(grepl("html", con_type)){
-          ext <- "html"
-        } else {
-          ext <- "other"
-        }
-        ext
-      } else {
-        print("bad response")
-        response$result$status_code
-        # stop()
-      }
+  
+  
+  output$resumen <- renderDT({
+    
+    DT::datatable(d() %>%
+                    dplyr::relocate(id, .after = last_col()),rownames = TRUE, options = list(pageLength = 50,
+                                                                                             
+                                                                                             dom = 'Bfrtip',
+                                                                                             scrollX = T,
+                                                                                             columnDefs = list(list(
+                                                                                               targets = 5,
+                                                                                               render = JS(
+                                                                                                 "function(data, type, row, meta) {",
+                                                                                                 "return type === 'display' && data.length > 150 ?",
+                                                                                                 "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
+                                                                                                 "}")
+                                                                                             ))), callback = JS('table.page(3).draw(false);')) 
+    
+  })
+  
+  
+  
+  output$descargar <- downloadHandler(
+    filename = function() {
+      paste('Sesion-', as.data.frame(d())[1,3],'-',as.data.frame(d())[1,4],'.xlsx', sep='')
+    },
+    content = function(con) {
+      write.xlsx(as.data.frame(d()), con)
     }
-  }
-
+  )
   
-  observeEvent(input$url, {
-    req(input$url)
-    #showModal(waitingModal())
-    url <- input$url
-    pdf$pdf_folder <- "pdf_folder"
+  output$nube <- renderWordcloud2({
     
     
-    x <- safe_GET(url)
+    d()%>%
+      as.data.frame()%>%
+      quanteda::corpus(.,text_field = "speech") %>%
+      quanteda::dfm(.,stem = FALSE,
+                    tolower = TRUE,
+                    remove = c(stopwords("spanish"),"señor", "señora","legislador","legisladora"),
+                    remove_punct = TRUE,
+                    remove_numbers = TRUE,
+                    verbose = FALSE)%>%
+      dfm_remove(min_nchar=3)%>%
+      dfm_trim(min_termfreq = 2)%>%
+      quanteda.textstats::textstat_frequency()%>%
+      as.data.frame()%>%select(feature ,frequency)%>%
+      dplyr::rename(word=feature,freq=frequency)%>%
+      wordcloud2(size=0.9,color= rev(RColorBrewer::brewer.pal(9,"Blues")),backgroundColor = "grey")
     
-    ext <- assign_extension(x)
     
     
+  })
+  
+  
+  
+  
+  d2 <- eventReactive(input$boton2,{
     
-    if(ext!='pdf') {
-      print("bad extension")
-      showNotification("URL incorrecta!", duration=3, type=c("warning"))
-      removeModal()
-      req(FALSE)
+    
+    d = speech::speech_build(input$file_input$datapath,compiler = input$compila2)
+    
+    d <- puy::add_party(speech = d)
+    
+  })
+  
+  
+  
+  
+  output$resumen2 <- renderDT({
+    
+    DT::datatable(d2() %>%
+                    dplyr::relocate(id, .after = last_col()),rownames = TRUE, options = list(pageLength = 50,
+                                                                                             
+                                                                                             dom = 'Bfrtip',
+                                                                                             scrollX = T,
+                                                                                             columnDefs = list(list(
+                                                                                               targets = 5,
+                                                                                               render = JS(
+                                                                                                 "function(data, type, row, meta) {",
+                                                                                                 "return type === 'display' && data.length > 150 ?",
+                                                                                                 "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
+                                                                                                 "}")
+                                                                                             ))), callback = JS('table.page(3).draw(false);')) 
+    
+  })
+  
+  
+  
+  output$descargar2 <- downloadHandler(
+    filename = function() {
+      paste('Sesion-', as.data.frame(d2())[1,3],'-',as.data.frame(d2())[1,4],'.xlsx', sep='')
+    },
+    content = function(con) {
+      write.xlsx(as.data.frame(d2()), con)
     }
-    
-    # if(!file.exists(pdf$pdf_folder)){
-    suppressWarnings(dir.create("pdf_folder"))
-    # }
-    
-    temp <- tempfile(fileext = ".pdf", tmpdir = "pdf_folder")
-    
-    download.file(url, temp, mode = "wb", quiet=TRUE)
-    
-    addResourcePath("pdf_folder", pdf$pdf_folder)
-    
-    pdf$pdfPath <- temp
-    removeModal()
-  })
+  )
   
-  
-
-  observeEvent(input$boton, {
-    
-    library(puy)
-    a <- speech::speech_build(file = pdf$pdfPath, compiler = input$compila)
-    a$speech=enc2native(a$speech)
-    
-    library(puy)
-    aa <- puy::add_party(speech = a)
-    aa=as.data.frame(aa)
-
-    
-    output$resumen <- renderDT({
-      
-      # validate(need(nrow(aa) > 0, 
-      #               'No se pudo recuperar el documento'))
-      
-      #mutate(aa, date = format(date, "%Y-%m-%d"))%>%
-      
-      
-      
-      DT::datatable(aa %>%
-                      dplyr::relocate(id, .after = last_col()),rownames = TRUE, options = list(pageLength = 50,
-                                                                                        
-                                                                                        dom = 'Bfrtip',
-                                                                                        scrollX = T,
-                                                                                        columnDefs = list(list(
-                                                                                          targets = 5,
-                                                                                          render = JS(
-                                                                                            "function(data, type, row, meta) {",
-                                                                                            "return type === 'display' && data.length > 150 ?",
-                                                                                            "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
-                                                                                            "}")
-                                                                                        ))), callback = JS('table.page(3).draw(false);'))
-      
-      
-      # aa %>%  
-      #   dplyr::relocate(id, .after = last_col())%>%
-      #   DT::datatable(rownames = TRUE, options = list(pageLength = 50,
-      #                                                 
-      #                                                 dom = 'Bfrtip',
-      #                                                 scrollX = T,
-      #                                                 columnDefs = list(list(
-      #                                                   targets = 5,
-      #                                                   render = JS(
-      #                                                     "function(data, type, row, meta) {",
-      #                                                     "return type === 'display' && data.length > 150 ?",
-      #                                                     "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
-      #                                                     "}")
-      #                                                 ))), callback = JS('table.page(3).draw(false);'))
-      
-      
-    })
+  output$nube2 <- renderWordcloud2({
     
     
-    output$nube <- renderWordcloud2({
-      
-      # validate(need(nrow(aa) > 0, 
-      #               'No se pudo recuperar el documento'))
-      aa %>%
-        quanteda::corpus(.,text_field = "speech") %>%
-        quanteda::dfm(.,stem = FALSE,
-                      tolower = TRUE,
-                      remove = c(stopwords("spanish"),"señor", "señora","legislador","legisladora"),
-                      remove_punct = TRUE,
-                      remove_numbers = TRUE,
-                      verbose = FALSE)%>%
-        dfm_remove(min_nchar=3)%>%
-        dfm_trim(min_termfreq = 2)%>%
-        quanteda.textstats::textstat_frequency()%>%
-        as.data.frame()%>%select(feature ,frequency)%>%
-        dplyr::rename(word=feature,freq=frequency)%>%
-        wordcloud2(size=0.9,color= rev(RColorBrewer::brewer.pal(9,"Blues")),backgroundColor = "grey")
-      
-      
-      
-    })
-    
-    output$descargar <- downloadHandler(
-      filename = function() {
-        paste('Sesion-', aa[1,3],'-',aa[1,4],'.xlsx', sep='')
-      },
-      content = function(con) {
-        xlsx::write.xlsx(aa, con)
-      }
-    )
-    
-    
-  })
-  
-  
-  observeEvent(input$file_input, {
-    if (is.null(input$file_input)){
-      return(NULL)
-    }
-    
-    
-    pdf$pdfUrl <- input$file_input$datapath
-
-
-
-  })
-  
-  
-  observeEvent(input$boton2, {
-    
-    library(puy)
-    library(speech)
-    
-    d <- speech::speech_build(pdf$pdfUrl,compiler = input$compila2)
-    
-      
-      d <- puy::add_party(speech = d)
-      
-      dd = as.data.frame(d)
-      
-
-    
-    output$resumen2 <- renderDT({
-      
-      
-      DT::datatable(dd %>%
-                      relocate(id, .after = last_col()),rownames = TRUE, options = list(pageLength = 50,
-                                                                                        
-                                                                                        dom = 'Bfrtip',
-                                                                                        scrollX = T,
-                                                                                        columnDefs = list(list(
-                                                                                          targets = 5,
-                                                                                          render = JS(
-                                                                                            "function(data, type, row, meta) {",
-                                                                                            "return type === 'display' && data.length > 150 ?",
-                                                                                            "'<span title=\"' + data + '\">' + data.substr(0, 150) + '...</span>' : data;",
-                                                                                            "}")
-                                                                                        ))), callback = JS('table.page(3).draw(false);'))
-      
-      
-    })
-    
-    output$nube2 <- renderWordcloud2({
-      
-      validate(need(nrow(dd) > 0, 
-                    'No se pudo recuperar el documento'))
-      
-      dd %>%
-        quanteda::corpus(.,text_field = "speech") %>%
-        quanteda::dfm(.,stem = FALSE,
-                      tolower = TRUE,
-                      remove = c(stopwords("spanish"),"señor", "señora","legislador","legisladora"),
-                      remove_punct = TRUE,
-                      remove_numbers = TRUE,
-                      verbose = FALSE)%>%
-        dfm_remove(min_nchar=3)%>%
-        dfm_trim(min_termfreq = 2)%>%
-        quanteda.textstats::textstat_frequency()%>%
-        as.data.frame()%>%select(feature ,frequency)%>%
-        dplyr::rename(word=feature,freq=frequency)%>%
-        wordcloud2(size=0.9,color= rev(RColorBrewer::brewer.pal(9,"Blues")),backgroundColor = "grey")
-      
-      
-      
-    })
-    
-    output$descargar2 <- downloadHandler(
-      filename = function() {
-        paste('Sesion-', dd[1,3],'-',dd[1,4],'.xlsx', sep='')
-      },
-      content = function(con) {
-        xlsx::write.xlsx(dd, con)
-      }
-    )
+    d2()%>%
+      as.data.frame()%>%
+      quanteda::corpus(.,text_field = "speech") %>%
+      quanteda::dfm(.,stem = FALSE,
+                    tolower = TRUE,
+                    remove = c(stopwords("spanish"),"señor", "señora","legislador","legisladora"),
+                    remove_punct = TRUE,
+                    remove_numbers = TRUE,
+                    verbose = FALSE)%>%
+      dfm_remove(min_nchar=3)%>%
+      dfm_trim(min_termfreq = 2)%>%
+      quanteda.textstats::textstat_frequency()%>%
+      as.data.frame()%>%select(feature ,frequency)%>%
+      dplyr::rename(word=feature,freq=frequency)%>%
+      wordcloud2(size=0.9,color= rev(RColorBrewer::brewer.pal(9,"Blues")),backgroundColor = "grey")
     
     
     
-    
-    
-  })
+  })  
   
   
   
-})
-
+  
+  
+}
 
 shinyApp(ui = shinyAppUI, server = shinyAppServer)
-
-
